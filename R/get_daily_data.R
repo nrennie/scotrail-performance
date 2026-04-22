@@ -1,0 +1,101 @@
+library(pdftools)
+library(tidyverse)
+library(rvest)
+
+page_url <- "https://www.scotrail.co.uk/performance-and-reliability/previous-daily-statistical-summaries"
+
+raw_url <- read_html_live(page_url)
+
+daily_URLs <- raw_url |>
+  html_elements(".cke-acc") |>
+  as.character() |>
+  as_tibble() |>
+  separate_longer_delim(value, delim = "</p>") |>
+  filter(row_number() != 1) |>
+  mutate(
+    date = str_extract(value, "(?<=summary).*?(?=</a>)"),
+    date = str_trim(date),
+    date = dmy(date)
+  ) |>
+  mutate(
+    link = str_extract(value, "(?<=media).*?(?=download)"),
+    link = paste0("https://www.scotrail.co.uk/media", link, "download?inline")
+  ) |>
+  select(date, link) |>
+  filter(
+    !is.na(date),
+    !str_detect(link, "NA")
+  ) |>
+  distinct() |>
+  arrange(desc(date))
+
+# need to deal with NA values
+write_csv(daily_URLs, "data/daily_URLs.csv")
+
+
+get_daily_values <- function(pdf_date, data = daily_URLs) {
+  # Look up URL
+  pdf_url <- data |>
+    filter(date == pdf_date) |>
+    pull(link)
+  # Download file if it doesn't already exist
+  pdf_file <- paste0("raw-data/", pdf_date, ".pdf")
+  if (!file.exists(pdf_file)) {
+    download.file(pdf_url, pdf_file, mode = "wb")
+  }
+  # Process PDF data
+  txt <- pdf_text(pdf_file)
+  output <- txt |>
+    str_split_1("\n\n") |>
+    as_tibble() |>
+    separate_wider_delim(value,
+      delim = regex("\\s{2,}"),
+      names_sep = "_",
+      too_few = "align_start"
+    ) |>
+    drop_na() |>
+    mutate(
+      across(
+        everything(), ~ str_remove_all(.x, "\\b\\d{2}/\\d{2}/\\d{4}\\b")
+      )
+    ) |>
+    mutate(
+      value_2 = parse_number(value_2),
+      value_1 = str_remove_all(value_1, "\n|:"),
+      value_1 = str_trim(value_1),
+      value_1 = case_when(
+        row_number() == 3 ~ str_replace(
+          value_1, "cancellations", "planned cancellations"
+        ),
+        row_number() == 4 ~ str_replace(
+          value_1, "cancellations", "unplanned cancellations"
+        ),
+        TRUE ~ value_1
+      )
+    ) |>
+    pivot_wider(
+      names_from = value_1,
+      values_from = value_2
+    ) |>
+    mutate(date = pdf_date, .before = 1)
+
+  return(output)
+}
+
+# 2026 data
+daily_data <- purrr::map(
+  .x = daily_URLs$date[1:110],
+  .f = ~get_daily_values(.x)
+) |>
+  bind_rows()
+
+daily_data_final <- daily_data |>
+  select(-value_3) |>
+  filter(year(date) == 2026)
+
+write_csv(daily_data_final, "data/daily_data.csv")
+
+
+
+
+

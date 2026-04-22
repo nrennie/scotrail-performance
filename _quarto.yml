@@ -1,0 +1,20 @@
+project:
+  output-dir: docs
+
+format:
+  dashboard:
+    theme: [pulse, custom.scss]
+    orientation: columns
+    toc: true
+    toc-location: left
+    fig-cap-location: top
+    image: "featured.png"
+    twitter-card: true
+    open-graph: true
+    include-in-header: fontawesome.html
+
+execute:
+  echo: false
+  eval: true
+  warning: false
+  message: false

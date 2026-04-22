@@ -1,0 +1,97 @@
+/*-- scss:defaults --*/
+
+// colours
+$body-color: #151C28;
+$link-color: #7F055F;
+$body-bg: #F2F4F8;
+
+// fonts
+$font-family-sans-serif: 'Nunito', Arial, sans-serif !default;
+$heading-font: 'Oswald', Arial, sans-serif !default;
+
+/*-- scss:rules --*/
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Oswald:wght@200..700&display=swap');
+
+h1, h2 {
+  font-family: $heading-font;
+}
+
+#toc-title {
+  text-align: left !important;
+}
+
+#dropdown {
+  border-radius: 4px;
+  border: 2px solid #AAAAAA;
+  padding-bottom: 2px;
+  width: 100%;
+}
+
+.footer {
+  text-align: center;
+  position: relative;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  padding-bottom: 5px;
+  color: $body-color;
+}
+
+.icon-link {
+    background-color: $body-bg;
+    color: $link-color;
+    padding: 5px 5px 5px 5px;
+    margin: 0px 0px 0px 0px;
+    border-radius: 5px;
+    border-style: solid;
+    border-width: 2px !important;
+    border-color: $link-color !important;
+    text-transform: uppercase;
+    text-decoration: none;
+    text-align: center;
+    max-width: 100px;
+}
+
+.icon-link:hover {
+    background-color: #FFFFFF;
+    color: $link-color;
+    border-color: $link-color;
+}
+
+.card {
+  --bs-card-border-color: none !important;
+  --bs-card-spacer-y: 0px !important;
+}
+
+.girafe {
+  width: 100% !important;
+}
+
+.girafe_container_std {
+  width: 100% !important;
+  height: 100%;
+  padding-top: 10px !important;
+}
+
+.callout {
+  margin-top: 0px !important;
+  margin-bottom: 0px !important;
+}
+
+div.callout-note.callout{
+  border-left-color: $link-color !important;
+}
+
+div.callout-note.callout-style-default>.callout-header {
+    background-color: #E5CDDF !important;
+}
+
+.selected {
+  z-index: 999 !important;
+}
+
+.Reactable {
+  background-color: $body-bg !important;
+}
