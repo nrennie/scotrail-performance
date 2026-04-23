@@ -82,16 +82,24 @@ get_daily_values <- function(pdf_date, data = daily_URLs) {
   return(output)
 }
 
-# 2026 data
-daily_data <- purrr::map(
-  .x = daily_URLs$date[1:110],
-  .f = ~get_daily_values(.x)
-) |>
-  bind_rows()
+# check against existing data
+existing_data <- read_csv("data/daily_data.csv")
+latest_existing_date <- max(existing_data$date)
 
-daily_data_final <- daily_data |>
-  select(-value_3) |>
-  filter(year(date) == 2026)
+new_dates <- daily_URLs |>
+  filter(date > latest_existing_date)
+
+if (nrow(new_dates) > 0) {
+  new_daily_data <- purrr::map(
+    .x = new_dates$date,
+    .f = ~get_daily_values(.x)
+  ) |>
+    bind_rows() |>
+    select(-any_of("value_3"))
+}
+
+daily_data_final <- rbind(existing_data, new_daily_data) |>
+  arrange(desc(date))
 
 write_csv(daily_data_final, "data/daily_data.csv")
 
