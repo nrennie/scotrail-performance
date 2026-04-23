@@ -1,5 +1,5 @@
 ---
-title: Scotrail Performance
+title: ScotRail Performance
 ---
 
 ```{r}
@@ -11,6 +11,7 @@ library(ggplot2)
 library(ggtext)
 library(ggiraph)
 library(glue)
+library(showtext)
 daily_data <- readr::read_csv("data/daily_data.csv")
 monthly_data <- readr::read_csv("data/monthly_data.csv")
 monthly_data_stations <- readr::read_csv("data/monthly_data_stations.csv")
@@ -20,11 +21,25 @@ today_date <- daily_data |>
 today_month <- monthly_data |>
   slice_max(date) |>
   pull(date)
+bg_col <- "#F2F4F8"
+font_add_google("Nunito")
+body_font <- "Nunito"
 ```
+
 
 # Daily 
 
 ## Column {width="40%"}
+
+::: {.card height="10%" expandable=false padding=0px}
+
+```{r}
+#| output: asis
+d <- format(as.Date(today_date), "%A %e %B %Y")
+cat(paste0("<h2>", d, "</h2>"))
+```
+
+:::
 
 ### Row
 
@@ -52,7 +67,7 @@ num_unplanned <- daily_data |>
   pull(`Number of unplanned cancellations`)
 list(
   icon = "x-circle",
-  color = "primary",
+  color = "secondary",
   value = num_unplanned
 )
 ```
@@ -67,7 +82,7 @@ num_absent <- daily_data |>
   pull(`Previous day traincrew absences`)
 list(
   icon = "person-dash",
-  color = "primary",
+  color = "secondary",
   value = num_absent
 )
 ```
@@ -81,8 +96,9 @@ list(
 ## Punctuality
 
 ```{r}
-#| out-width: "100%"
 #| expandable: false
+#| fig-align: left
+#| fig-alt: "Line chart showing the percentage of trains arriving within 5 minutes of advertised time per day across the ScotRail network. The data is available to download from the link beneath the chart."
 line_chart_data <- daily_data |>
   mutate(
     below = if_else(
@@ -95,31 +111,34 @@ g_int <- ggplot(
   mapping = aes(x = date, y = PPM)
 ) +
   geom_line() +
-  geom_hline(yintercept = 92.5, colour = "red") +
+  geom_hline(yintercept = 92.5, colour = "#e74c3c") +
   geom_point_interactive(
     mapping = aes(tooltip = label, data_id = date),
-    colour = "white",
+    colour = bg_col,
     alpha = 0,
     size = 5
   ) +
   labs(
-    title = format(as.Date(today_date), "%A %e %B, %Y"),
     subtitle = "Percentage of trains that arrive at their destination within five minutes of the advertised time",
-    caption = "**Note**: When a specially advertised revised timetable is in operation, at times of engineering work for example, performance is measured against the revised times.",
     x = NULL, y = NULL
   ) +
-  theme_minimal() +
+  scale_y_continuous(limits = c(NA, 100)) +
+  coord_cartesian(expand = FALSE, clip = "off") +
+  theme_minimal(base_size = 15, base_family = body_font) +
   theme(
-    plot.background = element_rect(fill = "#F2F4F8", colour = "#F2F4F8"),
-    plot.title = element_textbox_simple(face = "bold"),
-    plot.subtitle = element_textbox_simple(),
-    plot.caption = element_textbox_simple(margin = ggplot2::margin(t = 10)),
-    plot.title.position = "plot",
-    plot.caption.position = "plot"
+    plot.background = element_rect(
+      fill = bg_col, colour = bg_col
+    ),
+    plot.subtitle = element_textbox_simple(
+      margin = ggplot2::margin(t = 5, b = 10)
+    ),
+    plot.title.position = "plot"
   )
 girafe(
   ggobj = g_int,
-  bg = "#F2F4F8",
+  bg = bg_col,
+  width_svg = 7,
+  height_svg = 5,
   options = list(
     opts_tooltip(
       css = "
@@ -130,9 +149,8 @@ girafe(
         line-height: 1;
         color: #0E1116;"
     ),
-    opts_hover(css = "opacity:1;"),
-    opts_hover_inv(css = "opacity:0;"),
-    opts_toolbar(saveaspng = FALSE, hidden = "saveaspng"),
+    opts_hover(css = "opacity:0;"),
+    opts_toolbar(saveaspng = FALSE, hidden = c("saveaspng", "fullscreen")),
     opts_zoom(max = 1),
     opts_sizing(rescale = TRUE, width = 1)
   )
@@ -143,6 +161,8 @@ girafe(
 
 ```{r}
 #| expandable: false
+#| fig-align: left
+#| fig-alt: "Bar chart showing the number of planned and unplanned cancellations per day across the ScotRail network. The data is available to download from the link beneath the chart."
 bar_chart_data <- daily_data |>
   select(date, `Number of planned cancellations`, `Number of unplanned cancellations`) |>
   mutate(total = `Number of unplanned cancellations` + `Number of planned cancellations`) |>
@@ -154,34 +174,42 @@ bar_chart_data2 <- bar_chart_data |>
   pivot_longer(-date)
 g_int <- ggplot(
   data = bar_chart_data2,
-  mapping = aes(x = date, y = value, fill = name)
+  mapping = aes(
+    x = date, y = value,
+    fill = str_to_sentence(str_remove(name, "Number of "))
+  )
 ) +
-  geom_col() +
+  geom_col(colour = "transparent", width = 0.85) +
   geom_col_interactive(
     data = bar_chart_data,
     mapping = aes(x = date, y = total, tooltip = label, data_id = date),
-    fill = "transparent"
+    fill = "transparent",
+    colour = "transparent",
+    width = 0.85
   ) +
+  scale_fill_manual(values = c("#707c7d", "#2c3e50")) +
   labs(
-    title = format(as.Date(today_date), "%A %e %B, %Y"),
     subtitle = "Number of cancellations",
     x = NULL, y = NULL
   ) +
-  coord_cartesian(expand = FALSE) +
-  theme_minimal() +
+  coord_cartesian(expand = FALSE, clip = "off") +
+  theme_minimal(base_size = 15, base_family = body_font) +
   theme(
-    plot.background = element_rect(fill = "#F2F4F8", colour = "#F2F4F8"),
-    plot.title = element_textbox_simple(face = "bold"),
-    plot.subtitle = element_textbox_simple(),
-    plot.caption = element_textbox_simple(margin = ggplot2::margin(t = 10)),
+    plot.background = element_rect(
+      fill = bg_col, colour = bg_col
+    ),
+    plot.subtitle = element_textbox_simple(
+      margin = ggplot2::margin(t = 5, b = 10)
+    ),
     plot.title.position = "plot",
-    plot.caption.position = "plot",
     legend.position = "bottom",
     legend.title = element_blank()
   )
 girafe(
   ggobj = g_int,
-  bg = "#F2F4F8",
+  bg = bg_col,
+  width_svg = 7,
+  height_svg = 5,
   options = list(
     opts_tooltip(
       css = "
@@ -192,9 +220,8 @@ girafe(
         line-height: 1;
         color: #0E1116;"
     ),
-    opts_hover(css = "opacity:1;"),
-    opts_hover_inv(css = "opacity:0;"),
-    opts_toolbar(saveaspng = FALSE, hidden = "saveaspng"),
+    opts_hover(css = "fill:#3498db;"),
+    opts_toolbar(saveaspng = FALSE, hidden = c("saveaspng", "fullscreen")),
     opts_zoom(max = 1),
     opts_sizing(rescale = TRUE, width = 1)
   )
@@ -205,9 +232,22 @@ girafe(
 
 :::
 
-::: {.card height="25%" expandable=false}
+::: {.card height="25%" expandable=false padding=0px}
 
-{{< iconlink "data/daily_data.csv" "Data" "download" >}}
+```{=html}
+<div class="link-buttons" style="display: flex; gap: 10px;">
+  <a href="data/daily_data.csv" class="icon-link" target="_blank" rel="noopener"><i class="fa-solid fa-download"></i>Data</a>
+  <button class="icon-link" command="show-modal" commandfor="notes-1"><i class="fa-solid fa-note-sticky"></i>Notes</button>
+</div>
+
+<dialog id="notes-1" class="notes-modal">
+  <ol>
+  <li>ScotRail's target for the entire network is for 92.5% of services to arrive at their destination within five minutes of the advertised time, indicated by the red line on the chart.</li>
+  <li>When a specially advertised revised timetable is in operation, e.g., for times of engineering work, performance is measured against the revised times.</li>
+</ol>
+  <button commandfor="notes-1" command="close" class="modal-close">x</button>
+</dialog>
+```
 
 :::
 
@@ -215,6 +255,17 @@ girafe(
 # Monthly
 
 ## Column {width="40%"}
+
+::: {.card height="10%" expandable=false padding=0px}
+
+```{r}
+#| output: asis
+d <- format(as.Date(today_month), "%B %Y")
+cat(paste0("<h2>", d, "</h2>"))
+```
+
+:::
+
 
 ### Row
 
@@ -242,7 +293,7 @@ comp_perf <- monthly_data |>
   pull(comparison)
 list(
   icon = "graph-up-arrow",
-  color = "primary",
+  color = "secondary",
   value = comp_perf
 )
 ```
@@ -258,7 +309,7 @@ worst_station <- monthly_data_stations |>
   pull(Location)
 list(
   icon = "trophy-fill",
-  color = "primary",
+  color = "secondary",
   value = worst_station
 )
 ```
@@ -304,8 +355,26 @@ monthly_data_stations %>%
 
 :::
 
-::: {.card height="25%" expandable=false}
+::: {.card expandable=false padding=0px}
 
-{{< iconlink "data/202503.csv" "Data" "download" >}}
+```{=html}
+<div class="link-buttons" style="display: flex; gap: 10px;">
+  <a href="data/monthly_data_stations.csv" class="icon-link" target="_blank" rel="noopener"><i class="fa-solid fa-download"></i>Data</a>
+  <button class="icon-link" command="show-modal" commandfor="notes-2"><i class="fa-solid fa-note-sticky"></i>Notes</button>
+</div>
+
+<dialog id="notes-2" class="notes-modal">
+  <ol>
+  <li>The table shows the arrival times at terminal stations on the ScotRail network over a rolling 12 months.</li>
+</ol>
+  <button commandfor="notes-2" command="close" class="modal-close">x</button>
+</dialog>
+
+
+```
 
 :::
+
+
+
+

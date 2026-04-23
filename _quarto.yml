@@ -1,17 +1,20 @@
 project:
   output-dir: docs
+  type: website
+
+website:
+  twitter-card: true
+  open-graph: true
+  image: "assets/img/featured.png"
+  favicon: "assets/img/favicon.ico"
 
 format:
   dashboard:
-    theme: [pulse, custom.scss]
+    theme: [flatly, assets/css/custom.scss]
     orientation: columns
-    toc: true
-    toc-location: left
-    fig-cap-location: top
-    image: "featured.png"
-    twitter-card: true
-    open-graph: true
-    include-in-header: fontawesome.html
+    include-in-header: assets/html/fontawesome.html
+    include-after-body: assets/html/footer.html
+    fig-align: left
 
 execute:
   echo: false
