@@ -26,7 +26,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          install.packages(c("tidyverse", "reactable", "remotes", "rmarkdown", "knitr", "ggtext", "ggiraph", "glue", "showtext"))
+          install.packages(c("tidyverse", "reactable", "remotes", "rmarkdown", "knitr", "ggtext", "ggiraph", "glue", "showtext", "curl"))
           remotes:: install_github("kcuilla/reactablefmtr")
         shell: Rscript {0}
 
