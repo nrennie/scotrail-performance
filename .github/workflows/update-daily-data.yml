@@ -20,7 +20,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          install.packages(c("tidyverse", "pdftools", "rvest"))
+          install.packages(c("tidyverse", "pdftools", "rvest", "polite"))
         shell: Rscript {0}
 
       - name: Update data

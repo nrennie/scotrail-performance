@@ -1,10 +1,13 @@
 library(pdftools)
 library(tidyverse)
 library(rvest)
+library(polite)
 
 page_url <- "https://www.scotrail.co.uk/performance-and-reliability/previous-daily-statistical-summaries"
 
-raw_url <- read_html_live(page_url)
+session <- bow(page_url)
+
+raw_url <- scrape(session)
 
 daily_URLs <- raw_url |>
   html_elements(".cke-acc") |>
@@ -41,7 +44,8 @@ get_daily_values <- function(pdf_date, data = daily_URLs) {
   # Download file if it doesn't already exist
   pdf_file <- paste0("raw-data/", pdf_date, ".pdf")
   if (!file.exists(pdf_file)) {
-    download.file(pdf_url, pdf_file, mode = "wb")
+    pdf_session <- bow(pdf_url)
+    download.file(pdf_session$url, pdf_file, mode = "wb")
   }
   # Process PDF data
   txt <- pdf_text(pdf_file)
@@ -49,9 +53,9 @@ get_daily_values <- function(pdf_date, data = daily_URLs) {
     str_split_1("\n\n") |>
     as_tibble() |>
     separate_wider_delim(value,
-      delim = regex("\\s{2,}"),
-      names_sep = "_",
-      too_few = "align_start"
+                         delim = regex("\\s{2,}"),
+                         names_sep = "_",
+                         too_few = "align_start"
     ) |>
     drop_na() |>
     mutate(
@@ -73,6 +77,9 @@ get_daily_values <- function(pdf_date, data = daily_URLs) {
         TRUE ~ value_1
       )
     ) |>
+    mutate(value_1 = if_else(
+      str_detect(value_1, "PPM"), "PPM", value_1
+    )) |>
     pivot_wider(
       names_from = value_1,
       values_from = value_2
@@ -102,8 +109,3 @@ daily_data_final <- rbind(existing_data, new_daily_data) |>
   arrange(desc(date))
 
 write_csv(daily_data_final, "data/daily_data.csv")
-
-
-
-
-
